@@ -1,7 +1,8 @@
 (ns onyx.plugin.elasticsearch
     (:require [onyx.peer.pipeline-extensions :as p-ext]
               [clojurewerkz.elastisch.rest :as esr]
-              [clojurewerkz.elastisch.rest.document :as esd]))
+              [clojurewerkz.elastisch.rest.document :as esd]
+              [clojurewerkz.elastisch.rest.bulk :as esrb]))
 
 (defn inject-write-messages
   [{:keys [onyx.core/task-map] :as pipeline} lifecycle]
@@ -15,11 +16,10 @@
 
 (defmethod p-ext/write-batch :elasticsearch/write-messages
     [{:keys [onyx.core/results elasticsearch/connection elasticsearch/index elasticsearch/type]}]
-    (let [messages (map :message (mapcat :leaves results))]
-      (println connection index type)
-        (doseq [m messages]
-          (esd/create connection index type m)))
-    {})
+  (let [messages (map :message (mapcat :leaves results))]
+    (doseq [m messages]
+    (esd/create connection index type m))
+    {}))
 
 (defmethod p-ext/seal-resource :elasticsearch/write-messages
     [{:keys [elasticsearch/server]}]

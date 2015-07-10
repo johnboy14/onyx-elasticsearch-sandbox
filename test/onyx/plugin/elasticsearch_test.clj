@@ -1,9 +1,9 @@
 (ns onyx.plugin.elasticsearch-test
-    (:require [onyx.peer.pipeline-extensions :as p-ext]
-              [clojurewerkz.elastisch.rest :as esr]
+    (:require [clojurewerkz.elastisch.rest :as esr]
               [clojurewerkz.elastisch.rest.index :as esi]
               [clojurewerkz.elastisch.rest.document :as esd]
               [clojurewerkz.elastisch.query :as q]
+              [clojurewerkz.elastisch.rest.response :as esrsp]
               [onyx.api]
               [clojure.core.async :as async])
     (:use [midje.sweet]))
@@ -94,14 +94,15 @@
 
 ;;AFTER SUBMITTION JOB CHECK ELASTICSEARCH
 
-(Thread/sleep 10000)
+(Thread/sleep 20000)
+
 (fact "Confirm the contents of the job in ElasticSearch"
-      (let [person1 (first (:hits (:hits (esd/search connection "index1" "person" :query (q/term :name "John")))))
-            person2 (first (:hits (:hits (esd/search connection "index1" "person" :query (q/term :name "Peter")))))
-            person3 (first (:hits (:hits (esd/search connection "index1" "person" :query (q/term :name "Luke")))))]
-          person1 => {:name "John"}
-          person2 => {:name "Peter"}
-          person3 => {:name "Luke"})
+      (let [person1 (first (esrsp/hits-from (esd/search connection "index1" "person" :query (q/query-string :query "John"))))
+            person2 (first (esrsp/hits-from (esd/search connection "index1" "person" :query (q/query-string :query "Peter"))))
+            person3 (first (esrsp/hits-from (esd/search connection "index1" "person" :query (q/query-string :query "Luke"))))]
+        (:_source person1) => {:name "John"}
+        (:_source person2) => {:name "Peter"}
+        (:_source person3) => {:name "Luke"})
       (doseq [v-peer v-peers]
         (onyx.api/shutdown-peer v-peer))
       (onyx.api/shutdown-peer-group peer-group)

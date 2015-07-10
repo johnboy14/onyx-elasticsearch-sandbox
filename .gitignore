@@ -1,3 +1,4 @@
 *.idea/
 *onyx.log
 *.nrepl-port
+*target/
